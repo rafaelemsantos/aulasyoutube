@@ -1,0 +1,298 @@
+{
+  "name": "Troca de vendedor",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1148c8b0-a607-44ab-ab02-a5df0c999511",
+      "name": "When clicking ‘Test workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2772a915-e90f-4779-8404-ad2e1f7623b5",
+              "name": "url_Chatwoot",
+              "value": "COLOQUE SUA URL",
+              "type": "string"
+            },
+            {
+              "id": "e414ffa3-3311-4f25-813d-fdeeb5c3cd3a",
+              "name": "id_conta_chatwoot",
+              "value": "COLOQUE SEU ID",
+              "type": "string"
+            },
+            {
+              "id": "3a46c0b0-4a2f-4d3d-8808-2eb50ec9fdd1",
+              "name": "token_chatwoot",
+              "value": "COLOQUE SEU TOKEN",
+              "type": "string"
+            },
+            {
+              "id": "e9bd8420-989c-4d48-a8f2-05c9154d91bb",
+              "name": "antigo_vendedor",
+              "value": "NOME DO VENDEDOR",
+              "type": "string"
+            },
+            {
+              "id": "21b1eb31-9c0d-4b2f-af1c-6beb973eb374",
+              "name": "novo_vendedor",
+              "value": "NOME DO VENDEDOR",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "121143c1-c56e-4757-8aca-7766d79cf9d3",
+      "name": "Dados Chatwoot",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        620,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "payload",
+        "options": {}
+      },
+      "id": "e37e3682-b15d-48d2-9bef-b8c0fabfd57c",
+      "name": "Transformar em lista",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        980,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fb9030d6-d71f-4950-8096-a0d125477009",
+              "name": "id_contato",
+              "value": "={{ $json[\"id\"] }}",
+              "type": "number"
+            },
+            {
+              "id": "85ba0317-daab-4e00-ae2e-9d1ddfa92e0c",
+              "name": "vendedor",
+              "value": "={{ $json.custom_attributes.status }}",
+              "type": "string"
+            },
+            {
+              "id": "57818d24-2edb-4dd8-af96-e530915dd8a4",
+              "name": "nome",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "55a86825-fe56-4a42-a060-28e0a20bd3e8",
+      "name": "Ajustar campos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        1180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json[\"url_Chatwoot\"] }}/api/v1/accounts/{{ $json[\"id_conta_chatwoot\"] }}/contacts",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "page"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=api_access_token",
+              "value": "={{ $json.token_chatwoot }}"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "page",
+                    "value": "={{ $pageCount +1 }}"
+                  }
+                ]
+              },
+              "limitPagesFetched": true,
+              "maxRequests": 200
+            }
+          }
+        }
+      },
+      "id": "f19a2cbc-ecbc-48fd-9925-580c9add268a",
+      "name": "Consulta contatos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "030e1adb-b5d3-40a9-8281-b2b079cad8e5",
+              "leftValue": "={{ $json.tipo_de_contato }}",
+              "rightValue": "={{ $('Dados Chatwoot').item.json[\"antigo_vendedor\"] }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7d1003e9-f0e7-43bb-9e4f-82233ba1b418",
+      "name": "Separação",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $('Dados Chatwoot').item.json[\"url_Chatwoot\"] }}/api/v1/accounts/{{ $('Dados Chatwoot').item.json[\"id_conta_chatwoot\"] }}/contacts/{{ $json[\"id_contato\"] }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=api_access_token",
+              "value": "={{ $('Dados Chatwoot').item.json[\"token_chatwoot\"] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"custom_attributes\": {\"vendedor\":\"{{ $('Dados Chatwoot').item.json[\"novo_vendedor\"] }}\"}\n}",
+        "options": {}
+      },
+      "id": "5e229e3b-61ca-4999-87f7-c06eaa1b0f81",
+      "name": "Alterar Vendedor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1580,
+        280
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Transformar em lista": {
+      "main": [
+        [
+          {
+            "node": "Ajustar campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ajustar campos": {
+      "main": [
+        [
+          {
+            "node": "Separação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Dados Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dados Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Consulta contatos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consulta contatos": {
+      "main": [
+        [
+          {
+            "node": "Transformar em lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separação": {
+      "main": [
+        [
+          {
+            "node": "Alterar Vendedor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f657a6b4-69f1-43db-84ad-ba297756d428",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2bee7154b20b17f148560d7851602d5e8eb8d21b0b8aad3367537f8b009d0d23"
+  },
+  "id": "T9wAFKT8B0Qqljai",
+  "tags": []
+}
